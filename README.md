@@ -21,3 +21,9 @@ You will need the following things properly installed on your computer.
 
 * `meteor`
 * Visit your app at [http://localhost:3000](http://localhost:3000).
+
+## Known issue
+
+* Meteor template issue. Run commands:
+* `meteor remove blaze-templates`
+* `meteor add static-html`
