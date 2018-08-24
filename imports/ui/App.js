@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
+import {FormGroup, FormControl, ControlLabel, Button} from 'react-bootstrap'
 
 import { Locations } from '../api/locations'
 import { withTracker } from 'meteor/react-meteor-data'
@@ -8,7 +9,8 @@ import { Meteor } from 'meteor/meteor';
 
 const googleMapsClient = createClient({
   key: "AIzaSyA2PK1mFgnSydbxuT2JuxEF35q6b8K5c_g",
-  rate: {limit: 50}
+  rate: {limit: 50},
+  Promise: Promise
 })
 
 import Location from './Location.js'
@@ -18,47 +20,46 @@ class App extends Component {
       super(props)
 
       this.state = {
-         // location: null,
+         address: null,
          lat: null,
          long: null,
          distance: 10
       }
 
-     //  googleMapsClient.geocode({
-     //    address: '1600 Amphitheatre Parkway, Mountain View, CA'
-     // }, function(err, response) {
-     //    console.log('err',err)
-     //     if (!err) {
-     //        console.log('location', response.json.results)
-     //     }
-     //  })
-
       this.setUserLocation = this.setUserLocation.bind(this)
       this.setDistance = this.setDistance.bind(this)
+      this.handleSubmit = this.handleSubmit.bind(this)
    }
 
-   setUserLocation(event) {
-      console.log('setUserLocation')
+   handleSubmit(event) {
       event.preventDefault()
-      // const lat = Number(ReactDOM.findDOMNode(this.refs.lat).value.trim())
-      // const long = Number(ReactDOM.findDOMNode(this.refs.long).value.trim())
-      let lat, lng
-      const location = ReactDOM.findDOMNode(this.refs.location).value.trim()
-      // googleMapsClient.geocode({address: location}, (err, res) => {
-      //    console.log('err',err)
-      //    ({ lat, lng } = res.json.results[0].geometry.location)
-      //    console.log('results', res.json.results[0].geometry.location)
-      //    this.setState({
-      //       lat: lat
-      //       long: lng
-      //    })
-      // })
-      // this.setState({lat, long})
-   }
-
-   setDistance(event) {
-      event.preventDefault()
+      console.log('handleSubmit')
+      const address = ReactDOM.findDOMNode(this.refs.address).value.trim()
       const distance =  Number(ReactDOM.findDOMNode(this.refs.distance).value.trim())
+      if(distance != this.state.distance) {
+         this.setDistance(distance)
+      }
+      if(address != this.state.address) {
+         this.setUserLocation(address)
+      }
+
+   }
+
+   setUserLocation(address) {
+      let lat, lng
+      googleMapsClient.geocode({address}).asPromise()
+      .then(res => {
+         ({ lat, lng } = res.json.results[0].geometry.location)
+         this.setState({
+            address,
+            lat: lat,
+            long: lng
+         })
+      })
+      .catch(err => console.log('err',err))
+   }
+
+   setDistance(distance) {
       this.setState({distance})
    }
 
@@ -98,38 +99,22 @@ class App extends Component {
          <div className="container">
 
             <header>Radius Map</header>
-
-            <div className="row">
-               <form className="change-location" onSubmit={this.setUserLocation}>
-                  <input
-                     type="text"
-                     ref="location"
-                     placeholder="location"
+            <form>
+               <FormGroup controlId='location'>
+                  <ControlLabel>Address:</ControlLabel>
+                  <FormControl
+                     type='text'
+                     ref="address"
                   />
-               </form>
-               {/* <form className="change-location" onSubmit={this.setUserLocation}>
-                  <input
-                     type="text"
-                     ref="lat"
-                     placeholder="Lat"
-                  />
-               </form>
-               <form className="change-location" onSubmit={this.setUserLocation}>
-                  <input
-                     type="text"
-                     ref="long"
-                     placeholder="Long"
-                  />
-               </form> */}
-               <form className="change-location" onSubmit={this.setDistance}>
-                  <input
-                     type="text"
+                  <ControlLabel>Distance:</ControlLabel>
+                  <FormControl
+                     type='text'
                      ref="distance"
-                     placeholder="distance"
                   />
-               </form>
-            </div>
+                  <Button type="submit" onClick={this.handleSubmit}>Submit</Button>
+               </FormGroup>
 
+            </form>
             <ul>
                {this.renderLocations()}
             </ul>

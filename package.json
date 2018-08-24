@@ -12,6 +12,7 @@
     "@google/maps": "^0.5.5",
     "meteor-node-stubs": "^0.4.1",
     "react": "^16.4.2",
+    "react-bootstrap": "^0.32.3",
     "react-dom": "^16.4.2",
     "react-meteor-data": "^0.2.11"
   },
@@ -19,7 +20,6 @@
     "mainModule": {
       "client": "client/main.js",
       "server": "server/main.js"
-    },
-    "testModule": "tests/main.js"
+    }
   }
 }
