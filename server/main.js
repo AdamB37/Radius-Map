@@ -1,10 +1,10 @@
 import { Meteor } from 'meteor/meteor';
-import { Locations } from '../imports/api/locations'
+import { LocationsCollection } from '../imports/api/locations'
 const addresses = JSON.parse(Assets.getText('assets/addresses.json'))
 
 Meteor.startup(() => {
-   Locations.rawCollection().drop()
+   LocationsCollection.rawCollection().drop()
    addresses.forEach(address => {
-      Locations.insert(address)
+      LocationsCollection.insert(address)
    })
 })

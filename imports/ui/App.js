@@ -1,20 +1,32 @@
 import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
-import {FormGroup, FormControl, ControlLabel, Button, ListGroup, Form} from 'react-bootstrap'
-import GoogleMapReact from 'google-map-react';
+import {
+   FormGroup,
+   FormControl,
+   ControlLabel,
+   Button,
+   ListGroup,
+   Form,
+   Navbar,
+   Label
+} from 'react-bootstrap'
 
-import { Locations } from '../api/locations'
+import GoogleMapReact from 'google-map-react'
 import { withTracker } from 'meteor/react-meteor-data'
 import {createClient} from '@google/maps'
-import { Meteor } from 'meteor/meteor';
 
+import { LocationsCollection } from '../api/locations'
+
+import Locations from './Locations.js'
+
+const API_KEY = "AIzaSyA2PK1mFgnSydbxuT2JuxEF35q6b8K5c_g"
 const googleMapsClient = createClient({
-  key: "AIzaSyA2PK1mFgnSydbxuT2JuxEF35q6b8K5c_g",
+  key: API_KEY,
   rate: {limit: 50},
   Promise: Promise
 })
 
-import Location from './Location.js'
+
 
 class App extends Component {
    constructor(props) {
@@ -27,12 +39,16 @@ class App extends Component {
             lng: -122.419418
          },
          distance: Infinity,
-         zoom: 11
+         zoom: 11,
       }
+
+      this.mapUpdating = false
 
       this.setLocation = this.setLocation.bind(this)
       this.setDistance = this.setDistance.bind(this)
       this.handleSubmit = this.handleSubmit.bind(this)
+      this.initMarker = this.initMarker.bind(this)
+      this.updateMarker = this.updateMarker.bind(this)
    }
 
    handleSubmit(event) {
@@ -65,53 +81,63 @@ class App extends Component {
       this.setState({distance})
    }
 
-   calculateDistance(location) {
-      const toRad = value => value * Math.PI / 180
-      let lat2 = location.latitude
-      let lon2 = location.longitude
-      let lat1 = this.state.location.lat
-      let lon1 = this.state.location.lng
-      let R = 3958.7558657440545; // Radius of earth in Miles
-      let dLat = toRad(lat2-lat1);
-      let dLon = toRad(lon2-lon1);
-      let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-      let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      let d = R * c;
-      return d;
+   initMarker(map, maps) {
+      this.setState({
+         marker: new maps.Marker({
+            position: this.state.location,
+            map,
+            title: this.state.address
+         }),
+         map: map,
+         maps: maps
+      })
    }
 
-
-   renderLocations() {
-      console.log('state',this.state)
-      let filteredLocations = this.props.locations
-      if (this.state.location.lat && this.state.location.lng) {
-         filteredLocations = filteredLocations.filter(location => {
-            return this.calculateDistance(location) <= this.state.distance
-         })
+   updateMarker(lat,lng) {
+      if(this.mapUpdating) {
+         return
       }
-      return filteredLocations.map(location => (
-         <Location key={location._id} location={location} />
-      ))
+
+      this.mapUpdating = true
+
+      let {marker, map, maps, location} = this.state
+      if(maps) {
+         let newLocation
+         if(lat,lng) {
+            newLocation = new maps.LatLng(lat,lng)
+         } else {
+            newLocation = new maps.LatLng(location.lat,location.lng)
+         }
+         marker.setPosition(newLocation)
+         map.panTo(newLocation)
+      }
+      setTimeout(() => {
+         this.mapUpdating = false
+      }, 200)
    }
 
    render() {
       return (
          <div className="container">
-
-            <header>Radius Map</header>
-            <div style={{ height: '100vh', width: '100%' }}>
+            <Navbar>
+               <Navbar.Header>
+                  <Navbar.Brand>Radius Map</Navbar.Brand>
+               </Navbar.Header>
+            </Navbar>
+            <div style={{ height: '70vh', width: '70%' }}>
                <GoogleMapReact
+                  bootstrapURLKeys={{key: API_KEY}}
                   defaultCenter={this.state.location}
+                  center={this.state.location}
                   defaultZoom={this.state.zoom}
+                  onGoogleApiLoaded={({map, maps}) => this.initMarker(map, maps)}
+                  onChange={() => this.updateMarker()}
                >
-                  <ControlLabel>X</ControlLabel>
                </GoogleMapReact>
             </div>
             <Form>
                <FormGroup controlId='location'>
-                  <ControlLabel>Address:</ControlLabel>
+                  <h5><Label bsStyle="info">Address:</Label></h5>
                   <FormControl
                      style={{width: '50%'}}
                      type='text'
@@ -120,7 +146,7 @@ class App extends Component {
                   />
                </FormGroup>
                <FormGroup>
-                  <ControlLabel>Distance:</ControlLabel>
+                  <h5><Label bsStyle="info">Distance:</Label></h5>
                   <FormControl
                      style={{width: '25%'}}
                      type='text'
@@ -130,11 +156,13 @@ class App extends Component {
                </FormGroup>
                <Button bsStyle="primary" type="submit" onClick={this.handleSubmit}>Submit</Button>
             </Form>
-            <h1 style={{padding: '10px'}}>Addresses</h1>
-            <ListGroup>
-               {this.renderLocations()}
-            </ListGroup>
-
+            <h3><Label bsStyle="info">Addresses</Label></h3>
+            <Locations
+               locations={this.props.locations}
+               location={this.state.location}
+               distance={this.state.distance}
+               updateMarker={this.updateMarker}
+            />
          </div>
       )
    }
@@ -142,6 +170,6 @@ class App extends Component {
 
 export default withTracker(() => {
    return {
-      locations: Locations.find({}).fetch()
+      locations: LocationsCollection.find({}).fetch()
    }
 })(App)

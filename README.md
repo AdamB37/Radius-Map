@@ -14,16 +14,10 @@ You will need the following things properly installed on your computer.
 ## Installation
 
 * `git clone <repository-url>` this repository
-* `cd radius-map`
+* `cd Radius-Map`
 * `meteor npm install`
 
 ## Running / Development
 
 * `meteor`
 * Visit your app at [http://localhost:3000](http://localhost:3000).
-
-## Known issue
-
-* Meteor template issue. Run commands:
-* `meteor remove blaze-templates`
-* `meteor add static-html`
