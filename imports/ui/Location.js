@@ -1,10 +1,11 @@
 import React, {Component} from 'react'
+import {ListGroupItem} from 'react-bootstrap'
 
 export default class Location extends Component {
    renderLocation() {
       let location = this.props.location
       return (
-         <li key={location._id}>
+         <ListGroupItem>
             {
                location.street_number + ' '
                + location.route + ', '
@@ -13,7 +14,7 @@ export default class Location extends Component {
                + location.country + ', '
                + location.postalCode
             }
-         </li>
+         </ListGroupItem>
       )
    }
 
@@ -21,6 +22,5 @@ export default class Location extends Component {
       return (
          this.renderLocation()
       )
-
    }
 }

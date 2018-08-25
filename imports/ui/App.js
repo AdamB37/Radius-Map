@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
-import {FormGroup, FormControl, ControlLabel, Button} from 'react-bootstrap'
+import {FormGroup, FormControl, ControlLabel, Button, ListGroup, Form} from 'react-bootstrap'
+import GoogleMapReact from 'google-map-react';
 
 import { Locations } from '../api/locations'
 import { withTracker } from 'meteor/react-meteor-data'
@@ -21,39 +22,40 @@ class App extends Component {
 
       this.state = {
          address: null,
-         lat: null,
-         long: null,
-         distance: 10
+         location : {
+            lat: 37.774929,
+            lng: -122.419418
+         },
+         distance: Infinity,
+         zoom: 11
       }
 
-      this.setUserLocation = this.setUserLocation.bind(this)
+      this.setLocation = this.setLocation.bind(this)
       this.setDistance = this.setDistance.bind(this)
       this.handleSubmit = this.handleSubmit.bind(this)
    }
 
    handleSubmit(event) {
       event.preventDefault()
-      console.log('handleSubmit')
       const address = ReactDOM.findDOMNode(this.refs.address).value.trim()
       const distance =  Number(ReactDOM.findDOMNode(this.refs.distance).value.trim())
       if(distance != this.state.distance) {
          this.setDistance(distance)
       }
       if(address != this.state.address) {
-         this.setUserLocation(address)
+         this.setLocation(address)
       }
 
    }
 
-   setUserLocation(address) {
+   setLocation(address) {
       let lat, lng
       googleMapsClient.geocode({address}).asPromise()
       .then(res => {
          ({ lat, lng } = res.json.results[0].geometry.location)
          this.setState({
             address,
-            lat: lat,
-            long: lng
+            location: {lat, lng}
          })
       })
       .catch(err => console.log('err',err))
@@ -67,8 +69,8 @@ class App extends Component {
       const toRad = value => value * Math.PI / 180
       let lat2 = location.latitude
       let lon2 = location.longitude
-      let lat1 = this.state.lat
-      let lon1 = this.state.long
+      let lat1 = this.state.location.lat
+      let lon1 = this.state.location.lng
       let R = 3958.7558657440545; // Radius of earth in Miles
       let dLat = toRad(lat2-lat1);
       let dLon = toRad(lon2-lon1);
@@ -84,7 +86,7 @@ class App extends Component {
    renderLocations() {
       console.log('state',this.state)
       let filteredLocations = this.props.locations
-      if (this.state.lat && this.state.long) {
+      if (this.state.location.lat && this.state.location.lng) {
          filteredLocations = filteredLocations.filter(location => {
             return this.calculateDistance(location) <= this.state.distance
          })
@@ -99,25 +101,39 @@ class App extends Component {
          <div className="container">
 
             <header>Radius Map</header>
-            <form>
+            <div style={{ height: '100vh', width: '100%' }}>
+               <GoogleMapReact
+                  defaultCenter={this.state.location}
+                  defaultZoom={this.state.zoom}
+               >
+                  <ControlLabel>X</ControlLabel>
+               </GoogleMapReact>
+            </div>
+            <Form>
                <FormGroup controlId='location'>
                   <ControlLabel>Address:</ControlLabel>
                   <FormControl
+                     style={{width: '50%'}}
                      type='text'
                      ref="address"
+                     placeholder="1600 Amphitheatre Parkway, Mountain View, CA"
                   />
+               </FormGroup>
+               <FormGroup>
                   <ControlLabel>Distance:</ControlLabel>
                   <FormControl
+                     style={{width: '25%'}}
                      type='text'
                      ref="distance"
+                     placeholder="Enter miles"
                   />
-                  <Button type="submit" onClick={this.handleSubmit}>Submit</Button>
                </FormGroup>
-
-            </form>
-            <ul>
+               <Button bsStyle="primary" type="submit" onClick={this.handleSubmit}>Submit</Button>
+            </Form>
+            <h1 style={{padding: '10px'}}>Addresses</h1>
+            <ListGroup>
                {this.renderLocations()}
-            </ul>
+            </ListGroup>
 
          </div>
       )
