@@ -4,7 +4,12 @@ const addresses = JSON.parse(Assets.getText('assets/addresses.json'))
 
 Meteor.startup(() => {
    LocationsCollection.rawCollection().drop()
-   addresses.forEach(address => {
-      LocationsCollection.insert(address)
+   .then(() => {
+      addresses.forEach(address => {
+         LocationsCollection.insert(address)
+      })
+   })
+   .catch((err) => {
+      console.error(Error(err))
    })
 })
