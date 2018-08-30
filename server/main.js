@@ -3,7 +3,16 @@ import { LocationsCollection } from '../imports/api/locations'
 const addresses = JSON.parse(Assets.getText('assets/addresses.json'))
 
 Meteor.startup(() => {
-   LocationsCollection.rawCollection().drop()
+   let promise
+
+   if (LocationsCollection.find({}).fetch().length) {
+      promise = LocationsCollection.rawCollection().drop()
+   }
+   else {
+      promise = Promise.resolve()
+   }
+
+   promise
    .then(() => {
       addresses.forEach(address => {
          LocationsCollection.insert(address)
